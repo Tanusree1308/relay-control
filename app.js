@@ -13,6 +13,15 @@ app.use(express.static('public')); // Serve static files from 'public' directory
 app.use(cors()); // Enable CORS for all domains
 app.use(express.json()); // Parse JSON body
 
+// Disable the 'X-Powered-By' header
+app.disable('x-powered-by');
+
+// Add security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

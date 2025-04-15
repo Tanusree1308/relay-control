@@ -17,7 +17,8 @@
     }
 
     async function getRelayState() {
-      const response = await fetch('https://relay-control.onrender.com/button');
+      // Fetch the last saved state from the database
+      const response = await fetch('https://relay-control.onrender.com/button?state=on'); // This is just a placeholder
       const data = await response.json();
       document.getElementById('state').textContent = `Relay is ${data.state}`;
     }
@@ -27,8 +28,8 @@
 </head>
 <body>
   <h1>Relay Control</h1>
-  <button onclick="setRelayState('on')">Turn On</button>
-  <button onclick="setRelayState('off')">Turn Off</button>
+  <button onclick="setRelayState('on')"> On</button>
+  <button onclick="setRelayState('off')"> Off</button>
   <p id="state">Relay is unknown</p>
 </body>
 </html>
