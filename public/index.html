@@ -4,48 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relay Control</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+    <script>
+        async function setRelayState(state) {
+            const response = await fetch('https://relay-control.onrender.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state: state })
+            });
+            const result = await response.json();
+            console.log('Relay state updated:', result);
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 10px;
+
+        async function getRelayState() {
+            const response = await fetch('https://relay-control.onrender.com');
+            const data = await response.json();
+            document.getElementById('state').textContent = `Relay is ${data.state}`;
         }
-    </style>
+
+        // Fetch the initial state when the page loads
+        window.onload = getRelayState;
+    </script>
 </head>
 <body>
     <h1>Relay Control</h1>
-    <button id="onButton">Turn On</button>
-    <button id="offButton">Turn Off</button>
-
-    <script>
-        document.getElementById('onButton').addEventListener('click', () => {
-            fetch('http://your-render-app-url/button', { // Replace with your Render app URL
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ state: 'on' }),
-            })
-            .then(response => response.json())
-            .then(data => console.log(data));
-        });
-
-        document.getElementById('offButton').addEventListener('click', () => {
-            fetch('http://your-render-app-url/button', { // Replace with your Render app URL
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ state: 'off' }),
-            })
-            .then(response => response.json())
-            .then(data => console.log(data));
-        });
-    </script>
+    <button onclick="setRelayState('on')">Turn On</button>
+    <button onclick="setRelayState('off')">Turn Off</button>
+    <p id="state">Relay is off</p>
 </body>
 </html>
