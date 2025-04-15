@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relay Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Relay Control</h1>
+    <button id="onButton">Turn On</button>
+    <button id="offButton">Turn Off</button>
+
+    <script>
+        document.getElementById('onButton').addEventListener('click', () => {
+            fetch('http://your-render-app-url/button', { // Replace with your Render app URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ state: 'on' }),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data));
+        });
+
+        document.getElementById('offButton').addEventListener('click', () => {
+            fetch('http://your-render-app-url/button', { // Replace with your Render app URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ state: 'off' }),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data));
+        });
+    </script>
+</body>
+</html>
