@@ -21,7 +21,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serve static files (like index.html) from "public" folder
-app.use(express.static(path.join(__dirname, 'public')));
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -62,9 +64,10 @@ app.get('/button', async (req, res) => {
 });
 
 // Fallback route
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 
 // Start server
 app.listen(PORT, () => {
