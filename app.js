@@ -10,6 +10,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.get('/', (req, res) => {
+  res.send('Relay Control API is running!');
+});
 
 // Connect to MongoDB using the URI from .env
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
