@@ -12,35 +12,67 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.error(err));
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ MongoDB connection error:", err));
 
 // Define a schema for button state
 const buttonStateSchema = new mongoose.Schema({
-  state: { type: String, enum: ['on', 'off'], required: true }
+  state: { type: String, enum: ['on', 'off'], required: true },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const ButtonState = mongoose.model('ButtonState', buttonStateSchema);
 
-// API endpoint to control the relay
+// Root route
+app.get('/', (req, res) => {
+  res.send('✅ Relay Control Server is running!');
+});
+
+// GET route to set relay state (for testing/demo)
 app.get('/button', async (req, res) => {
-  const state = req.query.state; // Get the state from the query parameter
-  if (state) {
-    // Save the state to the database
+  const state = req.query.state?.toLowerCase();
+
+  if (!state || !['on', 'off'].includes(state)) {
+    return res.status(400).send({ error: 'Valid state (on/off) is required' });
+  }
+
+  try {
     const buttonState = new ButtonState({ state });
     await buttonState.save();
 
-    // Optionally, log the state
-    console.log(`Relay state is: ${state}`);
+    console.log(`Relay state set to: ${state}`);
+    res.send({ state });
+  } catch (err) {
+    console.error('Error saving state:', err);
+    res.status(500).send({ error: 'Internal server error' });
+  }
+});
 
-    res.send({ state: state });  // Return the state back to the Arduino
-  } else {
-    res.status(400).send({ error: 'State is required' });
+// POST route (preferred RESTful way)
+app.post('/button', async (req, res) => {
+  const { state } = req.body;
+
+  if (!state || !['on', 'off'].includes(state.toLowerCase())) {
+    return res.status(400).send({ error: 'Valid state (on/off) is required' });
+  }
+
+  try {
+    const buttonState = new ButtonState({ state: state.toLowerCase() });
+    await buttonState.save();
+
+    console.log(`Relay state set to: ${state}`);
+    res.send({ state });
+  } catch (err) {
+    console.error('Error saving state:', err);
+    res.status(500).send({ error: 'Internal server error' });
   }
 });
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
