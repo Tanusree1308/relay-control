@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+// Connect to MongoDB using the URI from .env
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error(err));
 
@@ -29,10 +29,6 @@ app.post('/button', async (req, res) => {
   const buttonState = new ButtonState({ state });
   await buttonState.save();
 
-  // Optionally, if you're using a service to control hardware remotely,
-  // you can trigger a command here. For example, send a request to a different service or 
-  // trigger actions based on state. Since no serial port is used, this part is skipped.
-
   res.status(201).send(buttonState);
 });
 
@@ -42,7 +38,7 @@ app.get('/button', async (req, res) => {
   res.send(state);
 });
 
-// Start the server
+// Start the server on the specified port
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
