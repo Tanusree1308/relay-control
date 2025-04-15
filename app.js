@@ -2,7 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { SerialPort } from 'serialport'; // ✅ FIXED
 
 dotenv.config();
 
@@ -24,21 +23,15 @@ const buttonStateSchema = new mongoose.Schema({
 
 const ButtonState = mongoose.model('ButtonState', buttonStateSchema);
 
-// Serial Port Setup
-const portName = 'COM3'; // Change this to your Arduino's port
-const serialPort = new SerialPort({
-  path: portName,
-  baudRate: 9600,
-});
-
 // API endpoint to control the relay
 app.post('/button', async (req, res) => {
   const { state } = req.body;
   const buttonState = new ButtonState({ state });
   await buttonState.save();
 
-  // Send command to Arduino
-  serialPort.write(state === 'on' ? '1' : '0');
+  // Optionally, if you're using a service to control hardware remotely,
+  // you can trigger a command here. For example, send a request to a different service or 
+  // trigger actions based on state. Since no serial port is used, this part is skipped.
 
   res.status(201).send(buttonState);
 });
