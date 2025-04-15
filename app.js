@@ -35,7 +35,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Mongoose schema
 const buttonStateSchema = new mongoose.Schema({
-  state: { type: String, enum: ['on', 'off'], required: true }
+  state: { type: String, enum: [' Turn On', ' Turn Off'], required: true }
 });
 const ButtonState = mongoose.model('ButtonState', buttonStateSchema);
 
