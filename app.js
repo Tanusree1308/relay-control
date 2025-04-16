@@ -6,23 +6,20 @@ import cors from 'cors';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-// Middleware setup
-app.use(express.static('public')); // Serve static files from 'public' directory
-app.use(cors()); // Enable CORS for all domains
-app.use(express.json()); // Parse JSON body
+app.use(express.static('public'));
+app.use(cors());
+app.use(express.json());
 
-// Disable the 'X-Powered-By' header
 app.disable('x-powered-by');
 
-// Add security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   next();
 });
 
-// MongoDB connection
+// MongoDB setup
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -30,21 +27,33 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log("✅ MongoDB connected"))
   .catch(err => console.error("❌ MongoDB connection error:", err));
 
-// Define schema for button state
 const buttonStateSchema = new mongoose.Schema({
   state: { type: String, enum: ['on', 'off'], required: true },
   timestamp: { type: Date, default: Date.now }
 });
 
-// Create the ButtonState model from the schema
 const ButtonState = mongoose.model('ButtonState', buttonStateSchema);
 
-// Root route for testing the server
+// Basic route
 app.get('/', (req, res) => {
   res.send('✅ Relay Control Server is running!');
 });
 
-// GET route for Arduino or testing with query parameter
+// Get most recent relay state
+app.get('/state', async (req, res) => {
+  try {
+    const latest = await ButtonState.findOne().sort({ timestamp: -1 });
+    if (!latest) {
+      return res.json({ state: 'unknown' });
+    }
+    res.json({ state: latest.state });
+  } catch (err) {
+    console.error('❌ Error fetching state:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Arduino sends relay state
 app.get('/button', async (req, res) => {
   const state = req.query.state?.toLowerCase();
 
@@ -53,10 +62,8 @@ app.get('/button', async (req, res) => {
   }
 
   try {
-    // Save the state to MongoDB
     const buttonState = new ButtonState({ state });
     await buttonState.save();
-
     console.log(`📥 GET: Relay state set to "${state}"`);
     res.json({ state });
   } catch (err) {
@@ -65,21 +72,17 @@ app.get('/button', async (req, res) => {
   }
 });
 
-// POST route for the web interface or API usage
+// Web interface sends relay state
 app.post('/button', async (req, res) => {
   const { state } = req.body;
-  console.log('Received request body:', req.body); // Log the entire request body
 
-  // Validate the state value
   if (!state || !['on', 'off'].includes(state.toLowerCase())) {
     return res.status(400).json({ error: 'Valid state (on/off) is required' });
   }
 
   try {
-    // Save the state to MongoDB
     const buttonState = new ButtonState({ state: state.toLowerCase() });
     await buttonState.save();
-
     console.log(`📥 POST: Relay state set to "${state}"`);
     res.json({ state });
   } catch (err) {
@@ -88,7 +91,6 @@ app.post('/button', async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
