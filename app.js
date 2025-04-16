@@ -4,54 +4,46 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware setup
-app.use(express.static('public'));  // Serve static files
-app.use(cors());  // Enable CORS for all domains
-app.use(express.json());  // Parse JSON body
-
-// Disable the 'X-Powered-By' header
+app.use(express.static('public'));
+app.use(cors());
+app.use(express.json());
 app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
 
-// MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+.then(() => console.log("✅ MongoDB connected"))
+.catch(err => console.error("❌ MongoDB error:", err));
 
-// Define schema for button state
 const buttonStateSchema = new mongoose.Schema({
   state: { type: String, enum: ['on', 'off'], required: true },
   timestamp: { type: Date, default: Date.now }
 });
 
-// Create the ButtonState model from the schema
 const ButtonState = mongoose.model('ButtonState', buttonStateSchema);
 
-// Root route for testing the server
 app.get('/', (req, res) => {
   res.send('✅ Relay Control Server is running!');
 });
 
-// GET route for Arduino or testing with query parameter
 app.get('/button', async (req, res) => {
   const state = req.query.state?.toLowerCase();
-  console.log(`Received request to set state to: ${state}`);
-
   if (!state || !['on', 'off'].includes(state)) {
     return res.status(400).json({ error: 'Valid state (on/off) is required' });
   }
 
   try {
-    const buttonState = new ButtonState({ state });
-    await buttonState.save();
-
-    console.log(`Relay state set to "${state}" in the database`);
+    const newState = new ButtonState({ state });
+    await newState.save();
+    console.log(`📥 GET: Relay state set to "${state}"`);
     res.json({ state });
   } catch (err) {
     console.error('❌ Error saving state:', err);
@@ -59,20 +51,15 @@ app.get('/button', async (req, res) => {
   }
 });
 
-// POST route for the web interface or API usage
 app.post('/button', async (req, res) => {
   const { state } = req.body;
-  console.log('Received request body:', req.body);  // Log the entire request body
-
-  // Validate the state value
   if (!state || !['on', 'off'].includes(state.toLowerCase())) {
     return res.status(400).json({ error: 'Valid state (on/off) is required' });
   }
 
   try {
-    const buttonState = new ButtonState({ state: state.toLowerCase() });
-    await buttonState.save();
-
+    const newState = new ButtonState({ state: state.toLowerCase() });
+    await newState.save();
     console.log(`📥 POST: Relay state set to "${state}"`);
     res.json({ state });
   } catch (err) {
@@ -81,7 +68,21 @@ app.post('/button', async (req, res) => {
   }
 });
 
-// Start server
+// ✅ New route for ESP32 to get the latest state
+app.get('/last-state', async (req, res) => {
+  try {
+    const latest = await ButtonState.findOne().sort({ timestamp: -1 });
+    if (latest) {
+      res.json({ state: latest.state });
+    } else {
+      res.json({ state: 'off' }); // default if nothing found
+    }
+  } catch (err) {
+    console.error('❌ Error fetching last state:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
